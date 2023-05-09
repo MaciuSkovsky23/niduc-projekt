@@ -1,0 +1,44 @@
+from arq import Encoder as EncoderModule
+from arq import Channel as ChannelModule
+from arq import Decoder as DecoderModule
+from arq.Encoder import PBEncoder, BCHEncoder
+
+
+# Wczytuje konfigurację aplikacji - z simulation.config
+# - ilość prób
+# - nazwa pliku wyjściowego
+# - długość wiadomości
+def configure_simulation(self) -> dict:
+    self.config.read("simulation.config")
+    simulation_parameters = {
+        "number_of_trials": int(self.config.get("Simulation", "number_of_trials")),
+        "output_file_name": self.config.get("Simulation", "output_file_name"),
+        "message_length": int(self.config.get("Simulation", "message_length"))
+        }
+    return simulation_parameters
+
+
+# Wczytuje konfigurację kanału - channel.config
+# - BER
+# - parametry kanału
+def configure_channel(self, channel: ChannelModule.Channel):
+    self.config.read("channel.config")
+    error_rate = float(self.config.get("Channel"), "BER")
+    channel.set_error_rate(error_rate)
+
+
+# Wczytuje konfiguację kodera/dekodera - encoding.config
+# - ilość segmentów
+# - typ kodowania
+def configure_encoding(self, encoder: EncoderModule.Encoder, decoder: DecoderModule.Decoder):
+    self.config.read("encoding.config")
+    number_of_segments = int(self.config.get("Encoding", "number_of_segments"))
+    encoding_type = self.config.get("Encoding", "encoding_type")
+
+    if encoding_type == "PB":
+        encoder = PBEncoder(number_of_segments)
+        decoder = PBDecoder(number_of_segments)
+    elif encoding_type == "BCH":
+        encoder = BCHEncoder(number_of_segments)
+        decoder = BCHDecoder(number_of_segments)
+    return encoder, decoder
